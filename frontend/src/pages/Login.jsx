@@ -5,9 +5,16 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [pass, setPass] = useState("");
   const [isRegister, setIsRegister] = useState(false);
-  const [rol, setRol] = useState("vendedor"); // 🔥 nuevo
+  const [rol, setRol] = useState("vendedor");
 
   const navigate = useNavigate();
+
+  // 🔥 limpiar formulario
+  const clearForm = () => {
+    setEmail("");
+    setPass("");
+    setRol("vendedor");
+  };
 
   const handleSubmit = async () => {
     try {
@@ -16,7 +23,7 @@ export default function Login() {
         : "http://localhost:3000/api/auth/login";
 
       const body = isRegister
-        ? { email, password: pass, rol } // 🔥 usa rol dinámico
+        ? { email, password: pass, rol }
         : { email, password: pass };
 
       const res = await fetch(url, {
@@ -35,8 +42,9 @@ export default function Login() {
 
       // 🟢 REGISTRO
       if (isRegister) {
-        alert("Usuario creado correctamente");
+        alert("Revisa tu correo para verificar tu cuenta");
         setIsRegister(false);
+        clearForm(); // 🔥 limpiar
         return;
       }
 
@@ -44,6 +52,7 @@ export default function Login() {
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
 
+      clearForm(); // 🔥 limpiar
       navigate("/dashboard");
 
     } catch (err) {
@@ -82,6 +91,7 @@ export default function Login() {
           <div className="mb-4">
             <input
               type="email"
+              value={email} // 🔥 controlado
               placeholder="E-mail"
               className="w-full px-4 py-2 rounded-full bg-[#f5f7fb] shadow-inner outline-none text-sm"
               onChange={(e) => setEmail(e.target.value)}
@@ -92,13 +102,14 @@ export default function Login() {
           <div className="mb-3">
             <input
               type="password"
+              value={pass} // 🔥 controlado
               placeholder="Password"
               className="w-full px-4 py-2 rounded-full bg-[#f5f7fb] shadow-inner outline-none text-sm"
               onChange={(e) => setPass(e.target.value)}
             />
           </div>
 
-          {/* 🔥 SELECTOR DE ROL */}
+          {/* SELECTOR DE ROL */}
           {isRegister && (
             <div className="mb-4 flex justify-center gap-4">
               
@@ -155,7 +166,10 @@ export default function Login() {
             {isRegister ? "Already have an account?" : "Don’t have an account?"}{" "}
             <span
               className="text-blue-500 cursor-pointer"
-              onClick={() => setIsRegister(!isRegister)}
+              onClick={() => {
+                setIsRegister(!isRegister);
+                clearForm(); // 🔥 limpiar al cambiar
+              }}
             >
               {isRegister ? "Login" : "Create"}
             </span>

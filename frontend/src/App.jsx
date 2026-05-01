@@ -6,6 +6,7 @@ import Productos from "./pages/Productos";
 import Inventario from "./pages/Inventario";
 import Ventas from "./pages/Ventas";
 import IA from "./pages/IA";
+import Verify from "./pages/Verify"; 
 
 import MainLayout from "./layouts/MainLayout";
 
@@ -16,6 +17,9 @@ export default function App() {
 
         {/* Login fuera del layout */}
         <Route path="/" element={<Login />} />
+
+        {/* VERIFY fuera del layout */}
+        <Route path="/verify/:token" element={<Verify />} />
 
         {/* Layout global */}
         <Route element={<MainLayout />}>
