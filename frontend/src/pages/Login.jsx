@@ -4,16 +4,50 @@ import { useNavigate } from "react-router-dom";
 export default function Login() {
   const [email, setEmail] = useState("");
   const [pass, setPass] = useState("");
+  const [isRegister, setIsRegister] = useState(false);
+  const [rol, setRol] = useState("vendedor"); // 🔥 nuevo
+
   const navigate = useNavigate();
 
-  const handleLogin = () => {
-    if (
-      (email === "admin@test.com" && pass === "1234") ||
-      (email === "user@test.com" && pass === "1234")
-    ) {
+  const handleSubmit = async () => {
+    try {
+      const url = isRegister
+        ? "http://localhost:3000/api/auth/register"
+        : "http://localhost:3000/api/auth/login";
+
+      const body = isRegister
+        ? { email, password: pass, rol } // 🔥 usa rol dinámico
+        : { email, password: pass };
+
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Error");
+      }
+
+      // 🟢 REGISTRO
+      if (isRegister) {
+        alert("Usuario creado correctamente");
+        setIsRegister(false);
+        return;
+      }
+
+      // 🔐 LOGIN
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data.user));
+
       navigate("/dashboard");
-    } else {
-      alert("Credenciales incorrectas");
+
+    } catch (err) {
+      alert(err.message);
     }
   };
 
@@ -22,7 +56,10 @@ export default function Login() {
 
       {/* TITLE */}
       <h1 className="text-4xl font-bold mb-10">
-        <span className="font-extrabold">Sign In</span> form
+        <span className="font-extrabold">
+          {isRegister ? "Register" : "Sign In"}
+        </span>{" "}
+        form
       </h1>
 
       {/* CARD */}
@@ -31,66 +68,112 @@ export default function Login() {
         {/* LEFT */}
         <div className="w-1/2 flex flex-col justify-center px-12">
 
-          <h2 className="text-xl font-semibold mb-1">Hello!</h2>
+          <h2 className="text-xl font-semibold mb-1">
+            {isRegister ? "Create Account" : "Hello!"}
+          </h2>
+
           <p className="text-gray-400 text-sm mb-6">
-            Sign into Your account
+            {isRegister
+              ? "Register a new account"
+              : "Sign into your account"}
           </p>
 
-          {/* INPUT EMAIL */}
-          <div className="mb-4 relative">
+          {/* EMAIL */}
+          <div className="mb-4">
             <input
               type="email"
               placeholder="E-mail"
-              className="w-full px-4 py-2 rounded-full bg-[#f5f7fb] shadow-inner outline-none text-sm focus:ring-2 focus:ring-cyan-400"
+              className="w-full px-4 py-2 rounded-full bg-[#f5f7fb] shadow-inner outline-none text-sm"
               onChange={(e) => setEmail(e.target.value)}
             />
           </div>
 
-          {/* INPUT PASSWORD */}
-          <div className="mb-3 relative">
+          {/* PASSWORD */}
+          <div className="mb-3">
             <input
               type="password"
               placeholder="Password"
-              className="w-full px-4 py-2 rounded-full bg-[#f5f7fb] shadow-inner outline-none text-sm focus:ring-2 focus:ring-cyan-400"
+              className="w-full px-4 py-2 rounded-full bg-[#f5f7fb] shadow-inner outline-none text-sm"
               onChange={(e) => setPass(e.target.value)}
             />
           </div>
 
+          {/* 🔥 SELECTOR DE ROL */}
+          {isRegister && (
+            <div className="mb-4 flex justify-center gap-4">
+              
+              <button
+                type="button"
+                onClick={() => setRol("vendedor")}
+                className={`px-4 py-1 rounded-full text-sm border transition ${
+                  rol === "vendedor"
+                    ? "bg-blue-500 text-white"
+                    : "bg-gray-100 text-gray-600"
+                }`}
+              >
+                Vendedor
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setRol("admin")}
+                className={`px-4 py-1 rounded-full text-sm border transition ${
+                  rol === "admin"
+                    ? "bg-blue-500 text-white"
+                    : "bg-gray-100 text-gray-600"
+                }`}
+              >
+                Admin
+              </button>
+
+            </div>
+          )}
+
           {/* OPTIONS */}
-          <div className="flex justify-between text-xs text-gray-400 mb-4">
-            <span className="flex items-center gap-1">
-              <input type="checkbox" />
-              Remember me
-            </span>
-            <span className="cursor-pointer hover:underline">
-              Forgot password?
-            </span>
-          </div>
+          {!isRegister && (
+            <div className="flex justify-between text-xs text-gray-400 mb-4">
+              <span className="flex items-center gap-1">
+                <input type="checkbox" />
+                Remember me
+              </span>
+              <span className="cursor-pointer hover:underline">
+                Forgot password?
+              </span>
+            </div>
+          )}
 
           {/* BUTTON */}
           <button
-            onClick={handleLogin}
+            onClick={handleSubmit}
             className="w-40 mx-auto bg-gradient-to-r from-cyan-400 to-blue-500 text-white py-2 rounded-full text-sm shadow-md hover:opacity-90 transition"
           >
-            SIGN IN
+            {isRegister ? "REGISTER" : "SIGN IN"}
           </button>
 
-          {/* FOOTER */}
+          {/* SWITCH */}
           <p className="text-xs text-center text-gray-400 mt-4">
-            Don’t have an account?{" "}
-            <span className="text-blue-500 cursor-pointer">Create</span>
+            {isRegister ? "Already have an account?" : "Don’t have an account?"}{" "}
+            <span
+              className="text-blue-500 cursor-pointer"
+              onClick={() => setIsRegister(!isRegister)}
+            >
+              {isRegister ? "Login" : "Create"}
+            </span>
           </p>
+
         </div>
 
         {/* RIGHT */}
         <div className="w-1/2 bg-gradient-to-b from-cyan-400 to-blue-500 flex flex-col justify-center items-center text-white px-10">
 
           <h2 className="text-2xl font-bold mb-4">
-            Welcome Back!
+            {isRegister ? "Join Us!" : "Welcome Back!"}
           </h2>
 
           <p className="text-center text-sm opacity-80 leading-relaxed">
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+            {isRegister
+              ? "Create your account and start managing your system."
+              : "Access your dashboard and manage your data easily."}
           </p>
 
         </div>
