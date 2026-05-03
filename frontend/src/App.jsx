@@ -6,33 +6,46 @@ import Productos from "./pages/Productos";
 import Inventario from "./pages/Inventario";
 import Ventas from "./pages/Ventas";
 import IA from "./pages/IA";
-import Verify from "./pages/Verify"; 
+import Verify from "./pages/Verify";
+import ResetPassword from "./pages/ResetPassword";
+import Usuarios from "./pages/Usuarios";
 
 import MainLayout from "./layouts/MainLayout";
+
+import PrivateRoute from "./routes/PrivateRoute";
+import AdminRoute from "./routes/AdminRoute";
 
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
 
-        {/* Login fuera del layout */}
+        {/*  RUTAS PÚBLICAS */}
         <Route path="/" element={<Login />} />
-
-        {/* VERIFY fuera del layout */}
         <Route path="/verify/:token" element={<Verify />} />
+        <Route path="/reset-password/:token" element={<ResetPassword />} />
 
-        {/* Layout global */}
-        <Route element={<MainLayout />}>
+        {/*  RUTAS PRIVADAS */}
+        <Route element={<PrivateRoute />}>
+          
+          {/* Layout protegido */}
+          <Route element={<MainLayout />}>
 
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/productos" element={<Productos />} />
-          <Route path="/inventario" element={<Inventario />} />
-          <Route path="/ventas" element={<Ventas />} />
-          <Route path="/ia" element={<IA />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/productos" element={<Productos />} />
+            <Route path="/inventario" element={<Inventario />} />
+            <Route path="/ventas" element={<Ventas />} />
+            <Route path="/ia" element={<IA />} />
 
+            {/*  SOLO ADMIN */}
+            <Route element={<AdminRoute />}>
+              <Route path="/usuarios" element={<Usuarios />} />
+            </Route>
+
+          </Route>
         </Route>
 
-        {/* fallback */}
+        {/*  fallback */}
         <Route path="*" element={<Navigate to="/" />} />
 
       </Routes>
