@@ -34,6 +34,13 @@ export default function InventarioPremium() {
 
   const token = localStorage.getItem("token");
 
+
+  // ==============================
+// MODAL DETALLES
+// ==============================
+const [showDetailsModal, setShowDetailsModal] = useState(false);
+const [detailProduct, setDetailProduct] = useState(null);
+
   // ==============================
   // CARGAR PRODUCTOS
   // ==============================
@@ -411,10 +418,16 @@ export default function InventarioPremium() {
                     Reabastecer
                   </button>
 
-                  <button className="flex-1 px-3 py-2 bg-gray-50 text-gray-600 rounded-xl text-sm font-medium hover:bg-gray-100 flex items-center justify-center gap-2">
-                    <Eye className="w-4 h-4" />
-                    Detalles
-                  </button>
+                  <button
+  onClick={() => {
+    setDetailProduct(item);
+    setShowDetailsModal(true);
+  }}
+  className="flex-1 px-3 py-2 bg-gray-50 text-gray-600 rounded-xl text-sm font-medium hover:bg-gray-100 flex items-center justify-center gap-2"
+>
+  <Eye className="w-4 h-4" />
+  Detalles
+</button>
 
                 </div>
 
@@ -512,6 +525,190 @@ export default function InventarioPremium() {
 
         </div>
       )}
+      {/* MODAL DETALLES */}
+{showDetailsModal && detailProduct && (
+
+  <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+
+    <div className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden">
+
+      {/* HEADER */}
+      <div className="flex justify-between items-center p-6 border-b">
+
+        <div>
+          <h2 className="text-2xl font-bold">
+            Detalles del Producto
+          </h2>
+
+          <p className="text-gray-500">
+            Información completa
+          </p>
+        </div>
+
+        <button
+          onClick={() => setShowDetailsModal(false)}
+          className="text-gray-500 hover:text-gray-700"
+        >
+          <X />
+        </button>
+
+      </div>
+
+      {/* BODY */}
+      <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+
+        <div>
+          <p className="text-sm text-gray-500">
+            ID
+          </p>
+
+          <p className="font-semibold">
+            #{detailProduct.id}
+          </p>
+        </div>
+
+        <div>
+          <p className="text-sm text-gray-500">
+            Nombre
+          </p>
+
+          <p className="font-semibold">
+            {detailProduct.nombre}
+          </p>
+        </div>
+
+        <div>
+          <p className="text-sm text-gray-500">
+            SKU
+          </p>
+
+          <p className="font-semibold">
+            {detailProduct.sku || "N/A"}
+          </p>
+        </div>
+
+        <div>
+          <p className="text-sm text-gray-500">
+            Categoría
+          </p>
+
+          <p className="font-semibold">
+            {detailProduct.categoria}
+          </p>
+        </div>
+
+        <div>
+          <p className="text-sm text-gray-500">
+            Precio
+          </p>
+
+          <p className="font-semibold">
+            ${Number(detailProduct.precio).toFixed(2)}
+          </p>
+        </div>
+
+        <div>
+          <p className="text-sm text-gray-500">
+            Stock Actual
+          </p>
+
+          <p className="font-semibold">
+            {detailProduct.stock}
+          </p>
+        </div>
+
+        <div>
+          <p className="text-sm text-gray-500">
+            Stock Mínimo
+          </p>
+
+          <p className="font-semibold">
+            {detailProduct.stock_minimo || 10}
+          </p>
+        </div>
+
+        <div>
+          <p className="text-sm text-gray-500">
+            Stock Máximo
+          </p>
+
+          <p className="font-semibold">
+            {detailProduct.stock_maximo || 100}
+          </p>
+        </div>
+
+        <div>
+          <p className="text-sm text-gray-500">
+            Estado
+          </p>
+
+          <p className="font-semibold">
+            {Number(detailProduct.stock) === 0
+              ? "Agotado"
+              : Number(detailProduct.stock) <
+                Number(detailProduct.stock_minimo || 10)
+              ? "Stock Bajo"
+              : "Normal"}
+          </p>
+        </div>
+
+        <div>
+          <p className="text-sm text-gray-500">
+            Valor Total
+          </p>
+
+          <p className="font-semibold">
+            $
+            {(
+              Number(detailProduct.stock) *
+              Number(detailProduct.precio)
+            ).toFixed(2)}
+          </p>
+        </div>
+
+        <div>
+          <p className="text-sm text-gray-500">
+            Fecha Creación
+          </p>
+
+          <p className="font-semibold">
+            {detailProduct.created_at
+              ? new Date(detailProduct.created_at).toLocaleDateString()
+              : "N/A"}
+          </p>
+        </div>
+
+        <div>
+          <p className="text-sm text-gray-500">
+            Última Actualización
+          </p>
+
+          <p className="font-semibold">
+            {detailProduct.updated_at
+              ? new Date(detailProduct.updated_at).toLocaleDateString()
+              : "N/A"}
+          </p>
+        </div>
+
+      </div>
+
+      {/* FOOTER */}
+      <div className="p-6 border-t flex justify-end">
+
+        <button
+          onClick={() => setShowDetailsModal(false)}
+          className="px-5 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700"
+        >
+          Cerrar
+        </button>
+
+      </div>
+
     </div>
+
+  </div>
+)}
+    </div>
+    
   );
 }
