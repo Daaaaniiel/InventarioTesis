@@ -4,6 +4,12 @@ export default function Usuarios() {
   const [usuarios, setUsuarios] = useState([]);
   const [editando, setEditando] = useState(null);
 
+  //  modal
+  const [showModal, setShowModal] = useState(false);
+
+  //  búsqueda
+  const [search, setSearch] = useState("");
+
   const [form, setForm] = useState({
     nombres: "",
     apellidos: "",
@@ -44,6 +50,19 @@ export default function Usuarios() {
   useEffect(() => {
     getUsuarios();
   }, []);
+
+  // ================= FILTRO BUSCADOR =================
+  const usuariosFiltrados = usuarios.filter((u) => {
+    const texto = search.toLowerCase();
+
+    return (
+      u.nombres?.toLowerCase().includes(texto) ||
+      u.apellidos?.toLowerCase().includes(texto) ||
+      u.email?.toLowerCase().includes(texto) ||
+      u.cedula?.includes(texto) ||
+      u.telefono?.includes(texto)
+    );
+  });
 
   // ================= VALIDACIONES =================
   const validar = () => {
@@ -115,6 +134,8 @@ export default function Usuarios() {
       alert(data.message);
 
       limpiarForm();
+      setShowModal(false);
+
       getUsuarios();
 
     } catch (err) {
@@ -125,17 +146,20 @@ export default function Usuarios() {
   // ================= EDITAR =================
   const editarUsuario = (u) => {
     setForm({
-      nombres: u.nombres,
-      apellidos: u.apellidos,
-      cedula: u.cedula,
-      telefono: u.telefono,
-      direccion: u.direccion,
-      email: u.email,
+      nombres: u.nombres || "",
+      apellidos: u.apellidos || "",
+      cedula: u.cedula || "",
+      telefono: u.telefono || "",
+      direccion: u.direccion || "",
+      email: u.email || "",
       password: "",
-      rol: u.rol,
+      rol: u.rol || "vendedor",
     });
 
     setEditando(u.id);
+
+    // 🔥 abrir modal
+    setShowModal(true);
   };
 
   // ================= DESACTIVAR =================
@@ -155,13 +179,8 @@ export default function Usuarios() {
 
       const data = await res.json();
 
-      if (res.status === 401) {
-        localStorage.clear();
-        window.location.href = "/";
-        return;
-      }
-
       alert(data.message);
+
       getUsuarios();
 
     } catch (err) {
@@ -181,87 +200,58 @@ export default function Usuarios() {
       password: "",
       rol: "vendedor",
     });
+
     setEditando(null);
+  };
+
+  // ================= NUEVO =================
+  const nuevoUsuario = () => {
+    limpiarForm();
+    setShowModal(true);
   };
 
   // ================= UI =================
   return (
     <div className="p-6">
 
-      <h1 className="text-2xl font-bold mb-6">Gestión de Usuarios</h1>
+      {/* HEADER */}
+      <div className="flex justify-between items-center mb-6">
 
-      {/* FORM */}
-      <div className="bg-white p-4 rounded-xl shadow mb-6 grid grid-cols-3 gap-4">
+        <h1 className="text-2xl font-bold">
+          Gestión de Usuarios
+        </h1>
 
-        <input placeholder="Nombres"
-          value={form.nombres}
-          onChange={(e)=>setForm({...form, nombres:e.target.value})}
-          className="border p-2 rounded"
-        />
+        <div className="flex gap-3">
 
-        <input placeholder="Apellidos"
-          value={form.apellidos}
-          onChange={(e)=>setForm({...form, apellidos:e.target.value})}
-          className="border p-2 rounded"
-        />
-
-        <input placeholder="Cédula"
-          value={form.cedula}
-          onChange={(e)=>setForm({...form, cedula:e.target.value})}
-          className="border p-2 rounded"
-        />
-
-        <input placeholder="Teléfono"
-          value={form.telefono}
-          onChange={(e)=>setForm({...form, telefono:e.target.value})}
-          className="border p-2 rounded"
-        />
-
-        <input placeholder="Dirección"
-          value={form.direccion}
-          onChange={(e)=>setForm({...form, direccion:e.target.value})}
-          className="border p-2 rounded"
-        />
-
-        <input type="email" placeholder="Email"
-          value={form.email}
-          onChange={(e)=>setForm({...form, email:e.target.value})}
-          className="border p-2 rounded"
-        />
-
-        {!editando && (
-          <input type="password" placeholder="Password"
-            value={form.password}
-            onChange={(e)=>setForm({...form, password:e.target.value})}
-            className="border p-2 rounded"
+          {/* 🔍 BUSCADOR */}
+          <input
+            type="text"
+            placeholder="Buscar usuario..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="border px-4 py-2 rounded-lg w-64"
           />
-        )}
 
-        <select
-          value={form.rol}
-          onChange={(e)=>setForm({...form, rol:e.target.value})}
-          className="border p-2 rounded"
-        >
-          <option value="vendedor">Vendedor</option>
-          <option value="admin">Admin</option>
-        </select>
+          {/* BOTÓN */}
+          <button
+            onClick={nuevoUsuario}
+            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg shadow"
+          >
+            + Crear Usuario
+          </button>
 
-        <button
-          onClick={handleSubmit}
-          className="bg-blue-500 text-white px-4 rounded col-span-3"
-        >
-          {editando ? "Actualizar" : "Crear"}
-        </button>
+        </div>
 
       </div>
 
       {/* TABLA */}
-      <div className="bg-white rounded-xl shadow">
+      <div className="bg-white rounded-xl shadow overflow-hidden">
+
         <table className="w-full text-sm">
 
           <thead className="bg-gray-100">
-            <tr>
-              <th>ID</th>
+            <tr className="text-center">
+              <th className="p-3">ID</th>
               <th>Nombre</th>
               <th>Cédula</th>
               <th>Teléfono</th>
@@ -273,46 +263,203 @@ export default function Usuarios() {
           </thead>
 
           <tbody>
-            {usuarios.map((u) => (
-              <tr key={u.id} className="text-center border-t">
+            {usuariosFiltrados.map((u) => (
+              <tr
+                key={u.id}
+                className="text-center border-t hover:bg-gray-50"
+              >
+                <td className="p-3">{u.id}</td>
 
-                <td>{u.id}</td>
-                <td>{u.nombres} {u.apellidos}</td>
+                <td>
+                  {u.nombres} {u.apellidos}
+                </td>
+
                 <td>{u.cedula}</td>
+
                 <td>{u.telefono}</td>
+
                 <td>{u.email}</td>
+
                 <td>{u.rol}</td>
 
                 <td>
-                  <span className={`px-2 py-1 rounded text-white ${
-                    u.activo ? "bg-green-500" : "bg-red-500"
-                  }`}>
+                  <span
+                    className={`px-2 py-1 rounded text-white text-xs ${
+                      u.activo
+                        ? "bg-green-500"
+                        : "bg-red-500"
+                    }`}
+                  >
                     {u.activo ? "Activo" : "Inactivo"}
                   </span>
                 </td>
 
                 <td className="space-x-2">
+
                   <button
-                    onClick={()=>editarUsuario(u)}
-                    className="bg-yellow-400 px-2 rounded"
+                    onClick={() => editarUsuario(u)}
+                    className="bg-yellow-400 hover:bg-yellow-500 px-3 py-1 rounded"
                   >
                     Editar
                   </button>
 
                   <button
-                    onClick={()=>eliminarUsuario(u.id)}
-                    className="bg-red-500 text-white px-2 rounded"
+                    onClick={() => eliminarUsuario(u.id)}
+                    className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded"
                   >
                     Desactivar
                   </button>
-                </td>
 
+                </td>
               </tr>
             ))}
           </tbody>
 
         </table>
       </div>
+
+      {/* ================= MODAL ================= */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+
+          <div className="bg-white w-[900px] rounded-2xl p-6 shadow-2xl">
+
+            {/* HEADER */}
+            <div className="flex justify-between items-center mb-6">
+
+              <h2 className="text-xl font-bold">
+                {editando
+                  ? "Editar Usuario"
+                  : "Crear Usuario"}
+              </h2>
+
+              <button
+                onClick={() => {
+                  setShowModal(false);
+                  limpiarForm();
+                }}
+                className="text-gray-500 hover:text-black text-xl"
+              >
+                ✕
+              </button>
+
+            </div>
+
+            {/* FORM */}
+            <div className="grid grid-cols-3 gap-4">
+
+              <input
+                placeholder="Nombres"
+                value={form.nombres}
+                onChange={(e)=>
+                  setForm({...form, nombres:e.target.value})
+                }
+                className="border p-2 rounded"
+              />
+
+              <input
+                placeholder="Apellidos"
+                value={form.apellidos}
+                onChange={(e)=>
+                  setForm({...form, apellidos:e.target.value})
+                }
+                className="border p-2 rounded"
+              />
+
+              <input
+                placeholder="Cédula"
+                value={form.cedula}
+                onChange={(e)=>
+                  setForm({...form, cedula:e.target.value})
+                }
+                className="border p-2 rounded"
+              />
+
+              <input
+                placeholder="Teléfono"
+                value={form.telefono}
+                onChange={(e)=>
+                  setForm({...form, telefono:e.target.value})
+                }
+                className="border p-2 rounded"
+              />
+
+              <input
+                placeholder="Dirección"
+                value={form.direccion}
+                onChange={(e)=>
+                  setForm({...form, direccion:e.target.value})
+                }
+                className="border p-2 rounded"
+              />
+
+              <input
+                type="email"
+                placeholder="Email"
+                value={form.email}
+                onChange={(e)=>
+                  setForm({...form, email:e.target.value})
+                }
+                className="border p-2 rounded"
+              />
+
+              {!editando && (
+                <input
+                  type="password"
+                  placeholder="Password"
+                  value={form.password}
+                  onChange={(e)=>
+                    setForm({...form, password:e.target.value})
+                  }
+                  className="border p-2 rounded"
+                />
+              )}
+
+              <select
+                value={form.rol}
+                onChange={(e)=>
+                  setForm({...form, rol:e.target.value})
+                }
+                className="border p-2 rounded"
+              >
+                <option value="vendedor">
+                  Vendedor
+                </option>
+
+                <option value="admin">
+                  Admin
+                </option>
+              </select>
+
+            </div>
+
+            {/* BOTONES */}
+            <div className="flex justify-end gap-3 mt-6">
+
+              <button
+                onClick={() => {
+                  setShowModal(false);
+                  limpiarForm();
+                }}
+                className="bg-gray-200 px-4 py-2 rounded"
+              >
+                Cancelar
+              </button>
+
+              <button
+                onClick={handleSubmit}
+                className="bg-blue-500 hover:bg-blue-600 text-white px-5 py-2 rounded"
+              >
+                {editando
+                  ? "Actualizar"
+                  : "Crear"}
+              </button>
+
+            </div>
+
+          </div>
+        </div>
+      )}
     </div>
   );
 }

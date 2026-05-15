@@ -9,6 +9,7 @@ import IA from "./pages/IA";
 import Verify from "./pages/Verify";
 import ResetPassword from "./pages/ResetPassword";
 import Usuarios from "./pages/Usuarios";
+import Categorias from "./pages/Categorias";
 
 import MainLayout from "./layouts/MainLayout";
 
@@ -16,39 +17,82 @@ import PrivateRoute from "./routes/PrivateRoute";
 import AdminRoute from "./routes/AdminRoute";
 
 export default function App() {
+
   return (
     <BrowserRouter>
+
       <Routes>
 
-        {/*  RUTAS PÚBLICAS */}
+        {/* ================= PUBLICAS ================= */}
         <Route path="/" element={<Login />} />
-        <Route path="/verify/:token" element={<Verify />} />
-        <Route path="/reset-password/:token" element={<ResetPassword />} />
 
-        {/*  RUTAS PRIVADAS */}
+        <Route
+          path="/verify/:token"
+          element={<Verify />}
+        />
+
+        <Route
+          path="/reset-password/:token"
+          element={<ResetPassword />}
+        />
+
+        {/* ================= PRIVADAS ================= */}
         <Route element={<PrivateRoute />}>
-          
-          {/* Layout protegido */}
+
+          {/* LAYOUT */}
           <Route element={<MainLayout />}>
 
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/productos" element={<Productos />} />
-            <Route path="/inventario" element={<Inventario />} />
-            <Route path="/ventas" element={<Ventas />} />
-            <Route path="/ia" element={<IA />} />
+            <Route
+              path="/dashboard"
+              element={<Dashboard />}
+            />
 
-            {/*  SOLO ADMIN */}
+            <Route
+              path="/productos"
+              element={<Productos />}
+            />
+
+            <Route
+              path="/inventario"
+              element={<Inventario />}
+            />
+
+            <Route
+              path="/ventas"
+              element={<Ventas />}
+            />
+
+            <Route
+              path="/ia"
+              element={<IA />}
+            />
+
+            {/* ================= SOLO ADMIN ================= */}
             <Route element={<AdminRoute />}>
-              <Route path="/usuarios" element={<Usuarios />} />
+
+              <Route
+                path="/usuarios"
+                element={<Usuarios />}
+              />
+
+              <Route
+                path="/categorias"
+                element={<Categorias />}
+              />
+
             </Route>
 
           </Route>
         </Route>
 
-        {/*  fallback */}
-        <Route path="*" element={<Navigate to="/" />} />
+        {/* ================= FALLBACK ================= */}
+        <Route
+          path="*"
+          element={<Navigate to="/" />}
+        />
 
       </Routes>
+
     </BrowserRouter>
   );
 }
