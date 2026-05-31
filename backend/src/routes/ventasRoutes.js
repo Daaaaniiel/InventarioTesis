@@ -6,6 +6,7 @@ import {
   createVenta,
   updateVenta,
   deleteVenta,
+  getDashboardData
 } from "../controllers/ventasController.js";
 
 import {
@@ -13,6 +14,12 @@ import {
 } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
+
+
+// ==============================
+// DASHBOARD (para la IA)
+// ==============================
+router.get("/dashboard", verifyToken, getDashboardData);
 
 
 // ==============================

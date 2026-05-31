@@ -18,6 +18,10 @@ export const getVentas = async (req, res) => {
         v.estado,
         v.total,
         v.vendedor_id,
+        v.ship_mode,
+        v.segment,
+        v.region,
+        v.shipping_days,
 
         json_agg(
           json_build_object(
@@ -26,7 +30,8 @@ export const getVentas = async (req, res) => {
             'producto', p.nombre,
             'cantidad', dv.cantidad,
             'precio_unitario', dv.precio_unitario,
-            'subtotal', dv.subtotal
+            'subtotal', dv.subtotal,
+            'descuento', dv.descuento
           )
         ) AS detalles
 
@@ -76,6 +81,10 @@ export const getVentaById = async (req, res) => {
         v.estado,
         v.total,
         v.vendedor_id,
+        v.ship_mode,
+        v.segment,
+        v.region,
+        v.shipping_days,
 
         json_agg(
           json_build_object(
@@ -84,7 +93,8 @@ export const getVentaById = async (req, res) => {
             'producto', p.nombre,
             'cantidad', dv.cantidad,
             'precio_unitario', dv.precio_unitario,
-            'subtotal', dv.subtotal
+            'subtotal', dv.subtotal,
+            'descuento', dv.descuento
           )
         ) AS detalles
 
@@ -134,12 +144,18 @@ export const createVenta = async (req, res) => {
     await client.query("BEGIN");
 
     const {
-  cliente,
-  metodo_pago,
-  estado,
-  detalles
-} = req.body;
-const vendedor_id = req.user.id;
+      cliente,
+      metodo_pago,
+      estado,
+      detalles,
+      ship_mode,
+      segment,
+      region,
+      shipping_days
+    } = req.body;
+
+    const vendedor_id = req.user.id;
+
     // ======================================
     // VALIDAR PRODUCTOS
     // ======================================
@@ -160,16 +176,24 @@ const vendedor_id = req.user.id;
         cliente,
         metodo_pago,
         estado,
-        vendedor_id
+        vendedor_id,
+        ship_mode,
+        segment,
+        region,
+        shipping_days
       )
-      VALUES ($1, $2, $3, $4)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
       RETURNING *
       `,
       [
         cliente,
         metodo_pago,
         estado,
-        vendedor_id
+        vendedor_id,
+        ship_mode || "Standard Class",
+        segment || "Consumer",
+        region || "West",
+        shipping_days || 3
       ]
     );
 
@@ -181,11 +205,7 @@ const vendedor_id = req.user.id;
     for (const item of detalles) {
 
       const productoDB = await client.query(
-        `
-        SELECT *
-        FROM productos
-        WHERE id = $1
-        `,
+        `SELECT * FROM productos WHERE id = $1`,
         [item.producto_id]
       );
 
@@ -195,7 +215,6 @@ const vendedor_id = req.user.id;
       // VALIDAR PRODUCTO
       // ==============================
       if (!producto) {
-
         throw new Error(
           `Producto ${item.producto_id} no existe`
         );
@@ -204,22 +223,21 @@ const vendedor_id = req.user.id;
       // ==============================
       // VALIDAR STOCK
       // ==============================
-      if (
-        Number(producto.stock) <
-        Number(item.cantidad)
-      ) {
-
+      if (Number(producto.stock) < Number(item.cantidad)) {
         throw new Error(
           `Stock insuficiente para ${producto.nombre}`
         );
       }
 
       // ==============================
-      // SUBTOTAL
+      // DESCUENTO Y SUBTOTAL
       // ==============================
+      const descuento = Number(item.descuento) || 0;
+
       const subtotal =
         Number(producto.precio) *
-        Number(item.cantidad);
+        Number(item.cantidad) *
+        (1 - descuento);
 
       // ==============================
       // INSERTAR DETALLE
@@ -232,16 +250,18 @@ const vendedor_id = req.user.id;
           producto_id,
           cantidad,
           precio_unitario,
-          subtotal
+          subtotal,
+          descuento
         )
-        VALUES ($1, $2, $3, $4, $5)
+        VALUES ($1, $2, $3, $4, $5, $6)
         `,
         [
           venta.id,
           item.producto_id,
           item.cantidad,
           producto.precio,
-          subtotal
+          subtotal,
+          descuento
         ]
       );
     }
@@ -271,6 +291,65 @@ const vendedor_id = req.user.id;
 
 
 // ==========================================
+// DASHBOARD — datos para la IA
+// ==========================================
+export const getDashboardData = async (req, res) => {
+
+  try {
+
+    // Ventas agrupadas por mes
+    const ventasMes = await pool.query(
+      `
+      SELECT
+        TO_CHAR(fecha, 'Mon') AS mes,
+        EXTRACT(MONTH FROM fecha) AS mes_num,
+        SUM(total) AS ventas
+      FROM ventas
+      WHERE estado = 'completado'
+      GROUP BY TO_CHAR(fecha, 'Mon'), EXTRACT(MONTH FROM fecha)
+      ORDER BY mes_num
+      `
+    );
+
+    // Última venta completa para alimentar la IA
+    const ultimaVenta = await pool.query(
+      `
+      SELECT
+        v.ship_mode,
+        v.segment,
+        v.region,
+        v.shipping_days,
+        v.fecha,
+        c.nombre AS categoria,
+        p.sub_categoria,
+        dv.descuento
+      FROM ventas v
+      JOIN detalle_venta dv ON dv.venta_id = v.id
+      JOIN productos p ON p.id = dv.producto_id
+      JOIN categorias c ON c.id = p.categoria_id
+      WHERE v.estado = 'completado'
+      ORDER BY v.fecha DESC
+      LIMIT 1
+      `
+    );
+
+    res.json({
+      ventasPorMes: ventasMes.rows,
+      ultimaVenta: ultimaVenta.rows[0] || null
+    });
+
+  } catch (error) {
+
+    console.error(error);
+
+    res.status(500).json({
+      message: "Error cargando dashboard"
+    });
+  }
+};
+
+
+// ==========================================
 // ACTUALIZAR VENTA
 // ==========================================
 export const updateVenta = async (req, res) => {
@@ -289,15 +368,8 @@ export const updateVenta = async (req, res) => {
       estado
     } = req.body;
 
-    // ======================================
-    // ACTUALIZAR CABECERA
-    // ======================================
     const ventaExiste = await client.query(
-      `
-      SELECT *
-      FROM ventas
-      WHERE id = $1
-      `,
+      `SELECT * FROM ventas WHERE id = $1`,
       [id]
     );
 
@@ -317,19 +389,12 @@ export const updateVenta = async (req, res) => {
         estado = $3
       WHERE id = $4
       `,
-      [
-        cliente,
-        metodo_pago,
-        estado,
-        id
-      ]
+      [cliente, metodo_pago, estado, id]
     );
 
     await client.query("COMMIT");
 
-    res.json({
-      message: "Venta actualizada"
-    });
+    res.json({ message: "Venta actualizada" });
 
   } catch (error) {
 
@@ -361,15 +426,8 @@ export const deleteVenta = async (req, res) => {
 
     const { id } = req.params;
 
-    // ======================================
-    // VALIDAR EXISTENCIA
-    // ======================================
     const ventaExiste = await client.query(
-      `
-      SELECT *
-      FROM ventas
-      WHERE id = $1
-      `,
+      `SELECT * FROM ventas WHERE id = $1`,
       [id]
     );
 
@@ -380,23 +438,14 @@ export const deleteVenta = async (req, res) => {
       });
     }
 
-    // ======================================
-    // ELIMINAR VENTA
-    // detalle_venta se elimina por CASCADE
-    // ======================================
     await client.query(
-      `
-      DELETE FROM ventas
-      WHERE id = $1
-      `,
+      `DELETE FROM ventas WHERE id = $1`,
       [id]
     );
 
     await client.query("COMMIT");
 
-    res.json({
-      message: "Venta eliminada"
-    });
+    res.json({ message: "Venta eliminada" });
 
   } catch (error) {
 

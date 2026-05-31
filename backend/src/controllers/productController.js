@@ -1,8 +1,10 @@
 import { pool } from "../config/db.js";
 
+
 // ================= GET =================
 export const getProductos = async (req, res) => {
   try {
+
     const result = await pool.query(`
       SELECT 
         p.*,
@@ -23,9 +25,11 @@ export const getProductos = async (req, res) => {
   }
 };
 
+
 // ================= CREATE =================
 export const createProducto = async (req, res) => {
   try {
+
     const {
       nombre,
       descripcion,
@@ -37,6 +41,7 @@ export const createProducto = async (req, res) => {
       sku,
       ubicacion,
       imagen,
+      sub_categoria,
     } = req.body;
 
     await pool.query(
@@ -51,9 +56,10 @@ export const createProducto = async (req, res) => {
         categoria_id,
         sku,
         ubicacion,
-        imagen
+        imagen,
+        sub_categoria
       )
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
       `,
       [
         nombre,
@@ -66,6 +72,7 @@ export const createProducto = async (req, res) => {
         sku,
         ubicacion,
         imagen,
+        sub_categoria || "Chairs",
       ]
     );
 
@@ -75,16 +82,17 @@ export const createProducto = async (req, res) => {
 
   } catch (err) {
     console.error(err);
-
     res.status(500).json({
       error: "Error creando producto",
     });
   }
 };
 
+
 // ================= UPDATE =================
 export const updateProducto = async (req, res) => {
   try {
+
     const { id } = req.params;
 
     const {
@@ -99,6 +107,7 @@ export const updateProducto = async (req, res) => {
       ubicacion,
       imagen,
       estado,
+      sub_categoria,
     } = req.body;
 
     await pool.query(
@@ -115,8 +124,9 @@ export const updateProducto = async (req, res) => {
         sku=$8,
         ubicacion=$9,
         imagen=$10,
-        estado=$11
-      WHERE id=$12
+        estado=$11,
+        sub_categoria=$12
+      WHERE id=$13
       `,
       [
         nombre,
@@ -130,6 +140,7 @@ export const updateProducto = async (req, res) => {
         ubicacion,
         imagen,
         estado,
+        sub_categoria || "Chairs",
         id,
       ]
     );
@@ -140,23 +151,21 @@ export const updateProducto = async (req, res) => {
 
   } catch (err) {
     console.error(err);
-
     res.status(500).json({
       error: "Error actualizando producto",
     });
   }
 };
 
+
 // ================= DELETE =================
 export const deleteProducto = async (req, res) => {
   try {
+
     const { id } = req.params;
 
     await pool.query(
-      `
-      DELETE FROM productos
-      WHERE id=$1
-      `,
+      `DELETE FROM productos WHERE id=$1`,
       [id]
     );
 
@@ -166,7 +175,6 @@ export const deleteProducto = async (req, res) => {
 
   } catch (err) {
     console.error(err);
-
     res.status(500).json({
       error: "Error eliminando producto",
     });
