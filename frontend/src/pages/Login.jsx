@@ -94,9 +94,9 @@ export default function Login() {
       {/* TITLE */}
       <h1 className="text-5xl font-bold mb-8 tracking-tight">
         <span className="bg-gradient-to-r from-cyan-500 to-blue-600 bg-clip-text text-transparent">
-          {isRegister ? "Register" : "Sign In"}
+          {isRegister ? "Registrate" : "Inicia"}
         </span>{" "}
-        <span className="text-gray-700">Form</span>
+        <span className="text-gray-700">Sesión</span>
       </h1>
 
       {/* CARD */}
@@ -105,12 +105,12 @@ export default function Login() {
         <div className="w-full md:w-1/2 p-8 lg:p-12 overflow-y-auto">
           <div className="mb-6">
             <h2 className="text-2xl font-bold text-gray-800">
-              {isRegister ? "Create Account" : "Hello!"}
+              {isRegister ? "Crea una Cuenta" : "Bienvenido"}
             </h2>
             <p className="text-gray-500 text-sm mt-1">
               {isRegister
-                ? "Register a new account"
-                : "Sign into your account"}
+                ? "Crea una nueva cuenta"
+                : "Inicia Sesión con tu cuenta"}
             </p>
           </div>
 

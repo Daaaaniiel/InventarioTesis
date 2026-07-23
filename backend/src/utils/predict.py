@@ -6,51 +6,50 @@ import pandas as pd
 # =========================
 # CARGAR MODELOS Y ENCODERS
 # =========================
-modelo_ventas = joblib.load("src/models/modelo_ventas.pkl")
+modelo_ventas  = joblib.load("src/models/modelo_ventas.pkl")
 modelo_demanda = joblib.load("src/models/modelo_demanda.pkl")
-encoders = joblib.load("src/models/encoders.pkl")
+encoders       = joblib.load("src/models/encoders.pkl")
 
 # =========================
 # INPUT
 # =========================
 input_data = json.loads(sys.argv[1])
 
+# DEBUG — muestra qué llega exactamente (quitar una vez funcione)
+print("KEYS RECIBIDAS:", list(input_data.keys()), file=sys.stderr)
+
 # =========================
-# ENCODIFICAR CON LOS MISMOS ENCODERS DEL ENTRENAMIENTO
+# CODIFICAR VARIABLES CATEGÓRICAS
 # =========================
-columnas_categoricas = [
-    "Ship Mode", "Segment", "City", "State",
-    "Region", "Category", "Sub-Category"
-]
+columnas_categoricas = ["Sub-Category", "Region"]
 
 for col in columnas_categoricas:
-    valor = input_data[col]
-    input_data[col] = encoders[col].transform([valor])[0]
+    valor = input_data.get(col, "")
+    le = encoders[col]
+    if valor in le.classes_:
+        input_data[col + "_enc"] = int(le.transform([valor])[0])
+    else:
+        input_data[col + "_enc"] = int(le.transform([le.classes_[0]])[0])
 
 # =========================
-# DATAFRAME CON EL ORDEN EXACTO DEL ENTRENAMIENTO
+# DATAFRAME CON .get() PARA EVITAR KeyError
 # =========================
 data = pd.DataFrame([{
-    "Ship Mode":     input_data["Ship Mode"],
-    "Segment":       input_data["Segment"],
-    "City":          input_data["City"],
-    "State":         input_data["State"],
-    "Region":        input_data["Region"],
-    "Category":      input_data["Category"],
-    "Sub-Category":  input_data["Sub-Category"],
-    "Discount":      input_data["Discount"],
-    "Year":          input_data["Year"],
-    "Month":         input_data["Month"],
-    "Day":           input_data["Day"],
-    "WeekDay":       input_data["WeekDay"],
-    "Weekend":       input_data["Weekend"],
-    "Shipping Days": input_data["Shipping Days"]
+    "Sub-Category_enc":   input_data.get("Sub-Category_enc", 0),
+    "Region_enc":         input_data.get("Region_enc", 0),
+    "Year":               input_data.get("Year", 2024),
+    "Month":              input_data.get("Month", 1),
+    "Quantity_Lag1":      input_data.get("Quantity_Lag1", 0),
+    "Quantity_RollMean3": input_data.get("Quantity_RollMean3", 0),
+    "Sales_Lag1":         input_data.get("Sales_Lag1", 0),
+    "Sales_RollMean3":    input_data.get("Sales_RollMean3", 0),
+    "Discount":           input_data.get("Discount", 0),
 }])
 
 # =========================
 # PREDICCIONES
 # =========================
-ventas = modelo_ventas.predict(data)[0]
+ventas  = modelo_ventas.predict(data)[0]
 demanda = modelo_demanda.predict(data)[0]
 
 # =========================
@@ -58,7 +57,7 @@ demanda = modelo_demanda.predict(data)[0]
 # =========================
 resultado = {
     "ventas_predichas": round(float(ventas), 2),
-    "demanda_predicha": round(float(demanda), 2)
+    "demanda_predicha":  round(float(demanda), 2)
 }
 
 print(json.dumps(resultado))

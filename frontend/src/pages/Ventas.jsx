@@ -389,7 +389,7 @@ export default function VentasPremium() {
               <div className="border border-blue-200 rounded-xl p-4 bg-blue-50">
 
                 <h3 className="font-bold text-blue-700 mb-3">
-                  🤖 Datos para Predicción IA
+                   Datos para Predicción IA
                 </h3>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
